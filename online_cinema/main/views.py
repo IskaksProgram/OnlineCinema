@@ -4,6 +4,7 @@ from rest_framework import permissions
 from main.serializers import *
 from rest_framework import viewsets
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from main.models import CinemaProduct
@@ -30,7 +31,14 @@ class CinemaProductViewset(LikedMixin, viewsets.ModelViewSet):
         return []
 
 class CinemaReviewViewset(viewsets.ModelViewSet):
-    queryset = CinemaProductReview.objects.all()
-    serializer_class = CinemaReviewSerializer
+    queryset = CinemaProductComment.objects.all()
+    serializer_class = CinemaCommentSerializer
+
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class CinemaReviewViewset2(viewsets.ModelViewSet):
+    queryset = CinemaProductFavorite.objects.all()
+    serializer_class = CinemaFavoriteSerializer
 
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

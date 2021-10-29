@@ -4,8 +4,6 @@ from rest_framework.response import Response
 from . import services
 from .serializers import FanSerializer
 
-
-
 class LikedMixin:
     @action(detail=True,methods=['POST'])
     def like(self, request, pk=None):

@@ -1,19 +1,21 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf.urls.static import static
-from django.conf import settings
 from django.conf.urls import url
 from rest_framework.routers import DefaultRouter
 from main.views import *
+from django.conf.urls.static import static
+from django.conf import settings
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-
 from django.conf.urls import include, url
+
+
 
 router = DefaultRouter()
 router.register('cinema', CinemaProductViewset)
-router.register('cinema_reviews', CinemaReviewViewset)
+router.register('cinema_comments', CinemaReviewViewset)
+router.register('cinema_favorite', CinemaReviewViewset2)
 
 schema_view = get_schema_view(
    openapi.Info(

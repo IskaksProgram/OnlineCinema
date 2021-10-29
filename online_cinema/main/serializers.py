@@ -1,5 +1,6 @@
 # from model_utils import fields
 # import requests
+# from typing_extensions import Required
 from rest_framework import serializers
 from likes.serializers import FanSerializer
 
@@ -19,14 +20,14 @@ class CinemaProductSerializer(serializers.ModelSerializer):
             'salesman',
             'genre',
             'image',
+            'country',
             'description',
             'price',
-            'country',
+            'file',
             'is_fan',
             'total_likes',
         )
-    
-    
+
     def get_is_fan(self, obj) -> bool:
         request = self.context.get('request')
         if request:
@@ -36,10 +37,17 @@ class CinemaProductSerializer(serializers.ModelSerializer):
         representation = super(
             CinemaProductSerializer, self
         ).to_representation(instance)
-        representation['reviews'] = CinemaReviewSerializer(
-            CinemaProductReview.objects.filter(cinema=instance.id),
+        representation['comments'] = CinemaCommentSerializer(
+            CinemaProductComment.objects.filter(cinema=instance.id),
             many=True
         ).data
+
+        #
+        representation['favorite'] = CinemaFavoriteSerializer(
+            CinemaProductFavorite.objects.filter(cinema=instance.id),
+            many=True
+        ).data
+        #
 
         matches = CinemaProduct.objects.filter(title=instance.genre).values()
         match_show_info = {}
@@ -68,8 +76,8 @@ class CinemaProductSerializer(serializers.ModelSerializer):
         # Подсчет суммы оценок и вывод среднего арифметического
         # (Средняя оценка)
         rating_list = []
-        for review in representation['reviews']:
-            rating_list.append(review['rating'])
+        for comment in representation['comments']:
+            rating_list.append(comment['rating'])
         # Если нет отзывов
         try:
             representation['cinema_rating'] = round(sum(rating_list) / len(rating_list), 2)
@@ -77,25 +85,39 @@ class CinemaProductSerializer(serializers.ModelSerializer):
             representation['cinema_rating'] = None
         return representation
     
+###############################
+
+
+
+###################################
+
+
 class ReviewMixin:
     def get_cinema_title(self, cinema_review):
         title = cinema_review.cinema.title
         return title
 
-
-
-class CinemaReviewSerializer(ReviewMixin, serializers.ModelSerializer):
+class CinemaCommentSerializer(ReviewMixin, serializers.ModelSerializer):
     class Meta:
-        model = CinemaProductReview
-        fields = "__all__"
+        model = CinemaProductComment
+        fields = (
+            # "id",
+            "author",
+            "cinema",
+            "cinema_title",
+            "text",
+            "image",
+            "rating",
+            "created_at",
+        )
 
     cinema_title = serializers.SerializerMethodField("get_cinema_title")
 
     def create(self, validated_data):
         request = self.context.get('request')
         author_email = request.user
-        review_info = CinemaProductReview.objects.create(author=author_email, **validated_data)
-        return review_info
+        comment_info = CinemaProductComment.objects.create(author=author_email, **validated_data)
+        return comment_info
         
     def validate_product(self, cinema):
         request = self.context.get('request')
@@ -107,3 +129,38 @@ class CinemaReviewSerializer(ReviewMixin, serializers.ModelSerializer):
                 "Вы уже оставляли отзыв на данный продукт"
                 )
         return cinema
+
+
+########################
+
+class CinemaFavoriteSerializer(ReviewMixin, serializers.ModelSerializer):
+    class Meta:
+        model = CinemaProductFavorite
+        fields = (
+            # "id",
+            "author",
+            "cinema",
+            "cinema_title",
+            "created_at",
+        )
+
+    cinema_title = serializers.SerializerMethodField("get_cinema_title")
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        author_email = request.user
+        favorite_info = CinemaProductFavorite.objects.create(author=author_email, **validated_data)
+        return favorite_info
+        
+    def validate_product(self, cinema):
+        request = self.context.get('request')
+        
+        if cinema.cinema_reviews.filter(
+            author=request.user
+        ).exists():
+            raise serializers.ValidationError(
+                "Вы уже добавили в избранное"
+                )
+        return cinema
+
+

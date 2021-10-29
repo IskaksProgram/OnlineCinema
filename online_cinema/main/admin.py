@@ -2,4 +2,5 @@ from django.contrib import admin
 from .models import *
 
 admin.site.register(CinemaProduct)
-admin.site.register(CinemaProductReview)
+admin.site.register(CinemaProductComment)
+admin.site.register(CinemaProductFavorite)

@@ -3,6 +3,11 @@ from django.db import models
 from model_utils import Choices
 from django.contrib.contenttypes.fields import GenericRelation
 from likes.models import Like
+from online_cinema import settings
+from transliterate import translit
+
+def upload_location(instance, filename):
+  return "%s/%s" %('video',translit(filename,'ru', reversed=True))
 
 User = get_user_model()
 
@@ -25,7 +30,8 @@ class ProductInfoMixin:
         'аниме', 'боевик', 'вестерн', 'военный', 'детектив', 'документальный', 'драма', 'исторический', 'комедия', 'короткометражный', 'криминал', 'мелодрама', 'мультфильм', 'научный', 'приключения', 'семейный', 'триллер', 'ужасы', 'фантастика', 'фэнтези', 'эротика',
     )
     RATING = Choices(1,2,3,4,5,6,7,8,9,10)
- 
+
+
 class CinemaProduct(CreatedatModel, ProductInfoMixin, models.Model):
 
     title = models.CharField(max_length=50, unique=True)
@@ -37,6 +43,8 @@ class CinemaProduct(CreatedatModel, ProductInfoMixin, models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     country = models.CharField(choices=ProductInfoMixin.COUNTRY, max_length=25)
     likes = GenericRelation(Like, null=True, blank=True)
+    file = models.FileField(upload_to=upload_location)
+    # users = models.ManyToManyField(User, related_name='favorite_posts')
 
     def __str__(self):
         return self.title
@@ -45,22 +53,36 @@ class CinemaProduct(CreatedatModel, ProductInfoMixin, models.Model):
     def total_likes(self):
         return self.likes.count()
 
-class CinemaProductReview(CreatedatModel):
+class CinemaProductComment(CreatedatModel):
     cinema = models.ForeignKey(
         CinemaProduct, on_delete=models.CASCADE,
-        related_name='cinema_reviews'
+        related_name='cinema_comments'
     )
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, 
-        related_name='cinema_reviews',
+        related_name='cinema_comments',
         null=True
     )
     image = models.ImageField(
-        upload_to='images/cinema_review',
+        upload_to='images/cinema_comments',
         null=True, blank=True
     )
     text = models.TextField()
     rating = models.PositiveIntegerField(choices=ProductInfoMixin.RATING)
 
+    def __str__(self) -> str:
+        return str(self.author)
+    
+############################################3
+class CinemaProductFavorite(CreatedatModel):
+    cinema = models.ForeignKey(
+        CinemaProduct, on_delete=models.CASCADE,
+        related_name='cinema_favorite'
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, 
+        related_name='cinema_favorite',
+        null=True
+    )
     def __str__(self) -> str:
         return str(self.author)

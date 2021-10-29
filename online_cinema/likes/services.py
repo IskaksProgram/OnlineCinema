@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from likes.models import Like
 
+from main.models import CinemaProduct
+
 User = get_user_model()
 
 def add_like(obj, user):
